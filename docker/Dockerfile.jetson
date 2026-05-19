@@ -1,0 +1,33 @@
+# Jetson Orin Nano image — JetPack 6, CUDA 12.4, TensorRT 10.2.
+# This is the runtime worker that talks to the target silicon. The
+# API server can run on any host; this is the box that does the
+# actual benchmarking.
+
+FROM nvcr.io/nvidia/l4t-jetpack:r36.3.0
+
+ARG DEBIAN_FRONTEND=noninteractive
+
+# System deps — keep this lean. tegrastats ships with JetPack.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        python3.11 python3.11-venv python3-pip git ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# Layer caching: copy lockfile-ish things first.
+COPY pyproject.toml README.md /app/
+COPY src /app/src
+
+RUN python3.11 -m pip install --upgrade pip \
+ && python3.11 -m pip install -e ".[onnx]"
+
+# onnxruntime-gpu for Jetson is an NVIDIA-hosted wheel — install separately.
+# Pinned to the version that matches JetPack 6 / CUDA 12.4 / TRT 10.2.
+RUN python3.11 -m pip install --extra-index-url https://pypi.jetson-ai-lab.dev/jp6/cu124 \
+        onnxruntime-gpu==1.18.0
+
+EXPOSE 8000
+
+# The worker runs the same FastAPI surface; an external orchestrator
+# hits POST /api/v1/runs to schedule sweeps on this device.
+CMD ["python3.11", "-m", "uvicorn", "ongoedge.api:app", "--host", "0.0.0.0", "--port", "8000"]

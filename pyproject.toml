@@ -1,0 +1,86 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "ongoedge"
+version = "0.3.1"
+description = "Edge CV benchmark suite for the Ongo companion robot."
+readme = "README.md"
+requires-python = ">=3.11"
+license = "MIT"
+authors = [
+    { name = "Sameer M.", email = "sameer@example.com" },
+]
+keywords = ["edge-ml", "robotics", "benchmark", "computer-vision", "ongo"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+
+dependencies = [
+    "numpy>=1.26",
+    "pydantic>=2.7",
+    "fastapi>=0.111",
+    "uvicorn[standard]>=0.30",
+    "typer>=0.12",
+    "rich>=13.7",
+    "structlog>=24.1",
+    "httpx>=0.27",
+    "websockets>=12.0",
+    "jinja2>=3.1",
+]
+
+[project.optional-dependencies]
+onnx     = ["onnxruntime>=1.18"]
+trt      = ["tensorrt>=10.0", "pycuda>=2024.1"]
+tflite   = ["tflite-runtime>=2.14"]
+dev      = [
+    "pytest>=8.2",
+    "pytest-asyncio>=0.23",
+    "pytest-cov>=5.0",
+    "ruff>=0.4",
+    "mypy>=1.10",
+    "httpx>=0.27",
+]
+all      = ["ongoedge[onnx,trt,tflite,dev]"]
+
+[project.scripts]
+ongoedge = "ongoedge.cli:app"
+
+[project.urls]
+Homepage = "https://github.com/samson1402/ongo-edge-visionbench"
+Issues   = "https://github.com/samson1402/ongo-edge-visionbench/issues"
+
+# ── tooling ─────────────────────────────────────────────────────────
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "N", "PL", "RUF"]
+ignore = ["PLR0913"]  # too-many-arguments — fine for benchmark dataclasses
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+warn_return_any = true
+warn_unused_ignores = true
+disallow_untyped_defs = true
+plugins = ["pydantic.mypy"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+addopts = "-ra -q --strict-markers"
+
+[tool.coverage.run]
+source = ["src/ongoedge"]
+branch = true
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/ongoedge"]

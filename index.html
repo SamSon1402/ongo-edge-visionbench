@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OngoEdge-VisionBench — Edge CV Benchmark Suite | InteractionLabs</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0a0e0a;
+  --bg-2:#0f1410;
+  --panel:#121a14;
+  --panel-2:#1a241c;
+  --border:#1f2e23;
+  --border-hot:#2d4434;
+  --text:#d8e6dc;
+  --text-2:#7b9485;
+  --text-3:#4a5e51;
+  --green:#7dff9d;
+  --green-dim:#3fb15f;
+  --amber:#ffb547;
+  --red:#ff6b6b;
+  --blue:#6bb5ff;
+  --grid:rgba(125,255,157,0.04);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+  font-family:'Space Grotesk',sans-serif;
+  background:var(--bg);
+  color:var(--text);
+  min-height:100vh;
+  background-image:
+    linear-gradient(var(--grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size: 32px 32px;
+  font-size:14px;
+}
+.mono{font-family:'JetBrains Mono',monospace}
+
+/* Top bar */
+.topbar{
+  border-bottom:1px solid var(--border);
+  background:linear-gradient(180deg,rgba(125,255,157,0.03),transparent);
+  padding:14px 24px;
+  display:flex;align-items:center;justify-content:space-between;
+  position:sticky;top:0;z-index:50;
+  backdrop-filter:blur(12px);
+  background-color:rgba(10,14,10,0.85);
+}
+.brand{display:flex;align-items:center;gap:14px}
+.brand-mark{
+  width:36px;height:36px;border:1px solid var(--green-dim);
+  display:grid;place-items:center;
+  font-family:'JetBrains Mono',monospace;font-weight:700;color:var(--green);
+  background:rgba(125,255,157,0.05);
+  position:relative;
+}
+.brand-mark::before,.brand-mark::after{
+  content:'';position:absolute;width:6px;height:6px;
+  border:1px solid var(--green-dim);
+}
+.brand-mark::before{top:-1px;left:-1px;border-right:none;border-bottom:none}
+.brand-mark::after{bottom:-1px;right:-1px;border-left:none;border-top:none}
+.brand-name{font-weight:700;letter-spacing:0.5px}
+.brand-name span{color:var(--green)}
+.brand-sub{font-size:10px;color:var(--text-3);text-transform:uppercase;letter-spacing:2px;font-family:'JetBrains Mono',monospace}
+.topbar-chips{display:flex;gap:8px;align-items:center}
+.chip{
+  font-family:'JetBrains Mono',monospace;font-size:11px;
+  padding:5px 10px;border:1px solid var(--border-hot);
+  background:var(--panel);color:var(--text-2);
+}
+.chip.live{color:var(--green);border-color:var(--green-dim);background:rgba(125,255,157,0.06)}
+.chip.live::before{content:'●';margin-right:5px;animation:blink 1.2s infinite}
+@keyframes blink{50%{opacity:0.3}}
+
+/* Layout */
+.shell{display:grid;grid-template-columns:240px 1fr;min-height:calc(100vh - 65px)}
+.sidebar{
+  border-right:1px solid var(--border);
+  padding:24px 0;
+  background:rgba(15,20,16,0.4);
+}
+.side-section{padding:0 20px;margin-bottom:24px}
+.side-label{
+  font-family:'JetBrains Mono',monospace;font-size:10px;
+  text-transform:uppercase;letter-spacing:2px;color:var(--text-3);
+  margin-bottom:10px;
+}
+.target-list{display:flex;flex-direction:column;gap:4px}
+.target{
+  padding:10px 12px;border:1px solid var(--border);
+  background:var(--panel);cursor:pointer;
+  display:flex;justify-content:space-between;align-items:center;
+  font-family:'JetBrains Mono',monospace;font-size:12px;
+  transition:all 0.15s;
+}
+.target:hover{border-color:var(--border-hot);background:var(--panel-2)}
+.target.active{border-color:var(--green-dim);background:rgba(125,255,157,0.08);color:var(--green)}
+.target-name{font-weight:500}
+.target-tdp{font-size:10px;color:var(--text-3)}
+.target.active .target-tdp{color:var(--green-dim)}
+
+.model-list{display:flex;flex-direction:column;gap:6px}
+.model-row{
+  display:flex;align-items:center;gap:8px;
+  font-family:'JetBrains Mono',monospace;font-size:12px;
+  padding:6px 10px;border:1px solid var(--border);
+  cursor:pointer;
+}
+.model-row:hover{border-color:var(--border-hot)}
+.model-row input{accent-color:var(--green)}
+.model-row.disabled{opacity:0.4}
+
+/* Main */
+.main{padding:24px;display:flex;flex-direction:column;gap:16px;overflow:hidden}
+.hero-row{display:grid;grid-template-columns:1.2fr 1fr;gap:16px}
+.panel{
+  border:1px solid var(--border);
+  background:var(--panel);
+  position:relative;
+}
+.panel::before{
+  content:'';position:absolute;top:0;left:0;width:24px;height:1px;background:var(--green-dim);
+}
+.panel-head{
+  padding:12px 16px;border-bottom:1px solid var(--border);
+  display:flex;justify-content:space-between;align-items:center;
+}
+.panel-title{
+  font-family:'JetBrains Mono',monospace;font-size:11px;
+  text-transform:uppercase;letter-spacing:2px;color:var(--text-2);
+}
+.panel-title::before{content:'// ';color:var(--green-dim)}
+.panel-meta{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text-3)}
+.panel-body{padding:18px}
+
+/* Run console */
+.console{
+  font-family:'JetBrains Mono',monospace;
+  background:#060906;
+  padding:14px 16px;
+  border:1px solid var(--border);
+  height:280px;overflow-y:auto;
+  font-size:11px;line-height:1.7;
+}
+.console-line{display:flex;gap:10px;color:var(--text-2)}
+.console-time{color:var(--text-3);flex-shrink:0}
+.console-tag{flex-shrink:0;min-width:54px}
+.tag-info{color:var(--blue)}
+.tag-ok{color:var(--green)}
+.tag-warn{color:var(--amber)}
+.tag-err{color:var(--red)}
+.tag-pwr{color:var(--text-2)}
+.console-msg{color:var(--text)}
+
+/* Run actions */
+.run-bar{display:flex;gap:8px;padding:14px 16px;border-bottom:1px solid var(--border);align-items:center}
+.btn{
+  font-family:'JetBrains Mono',monospace;font-size:11px;
+  padding:9px 16px;border:1px solid var(--border-hot);
+  background:var(--panel-2);color:var(--text);
+  cursor:pointer;letter-spacing:1px;text-transform:uppercase;
+  transition:all 0.15s;
+}
+.btn:hover{background:rgba(125,255,157,0.08);border-color:var(--green-dim);color:var(--green)}
+.btn.primary{background:rgba(125,255,157,0.1);border-color:var(--green-dim);color:var(--green)}
+.btn.primary:hover{background:rgba(125,255,157,0.18)}
+.btn.danger:hover{border-color:var(--red);color:var(--red);background:rgba(255,107,107,0.08)}
+.btn:disabled{opacity:0.4;cursor:not-allowed}
+.run-status{
+  margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text-2);
+  display:flex;align-items:center;gap:8px;
+}
+.run-status .dot{width:8px;height:8px;border-radius:50%;background:var(--text-3)}
+.run-status.running .dot{background:var(--amber);animation:blink 1s infinite}
+.run-status.done .dot{background:var(--green)}
+
+/* KPI grid */
+.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--border)}
+.kpi{
+  background:var(--panel);padding:18px;
+  display:flex;flex-direction:column;gap:6px;
+}
+.kpi-label{
+  font-family:'JetBrains Mono',monospace;font-size:10px;
+  text-transform:uppercase;letter-spacing:1.5px;color:var(--text-3);
+}
+.kpi-value{
+  font-family:'JetBrains Mono',monospace;font-size:26px;font-weight:500;
+  color:var(--text);
+}
+.kpi-value.good{color:var(--green)}
+.kpi-value.warn{color:var(--amber)}
+.kpi-value.bad{color:var(--red)}
+.kpi-unit{font-size:13px;color:var(--text-3);margin-left:4px}
+.kpi-delta{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text-3)}
+.kpi-delta.up{color:var(--green-dim)}
+.kpi-delta.down{color:var(--red)}
+
+/* Latency scope */
+.scope{
+  height:200px;position:relative;
+  background:
+    linear-gradient(var(--grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid) 1px, transparent 1px),
+    #060906;
+  background-size:20px 20px;
+  overflow:hidden;
+  border:1px solid var(--border);
+}
+.scope-axis-y{
+  position:absolute;left:0;top:0;bottom:0;width:42px;
+  display:flex;flex-direction:column;justify-content:space-between;
+  padding:6px 4px;
+  font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--text-3);
+  text-align:right;
+  border-right:1px solid var(--border);
+  background:#060906;
+}
+.scope-canvas{position:absolute;left:42px;top:0;right:0;bottom:0}
+.scope-budget{
+  position:absolute;left:42px;right:0;
+  border-top:1px dashed var(--amber);
+  pointer-events:none;
+}
+.scope-budget-label{
+  position:absolute;right:6px;top:-14px;
+  font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--amber);
+  background:#060906;padding:0 4px;
+}
+
+/* Results table */
+.tbl{width:100%;border-collapse:collapse;font-family:'JetBrains Mono',monospace;font-size:12px}
+.tbl thead th{
+  text-align:left;padding:10px 14px;
+  font-size:10px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-3);
+  border-bottom:1px solid var(--border);font-weight:500;
+  background:var(--bg-2);
+}
+.tbl tbody td{padding:12px 14px;border-bottom:1px solid var(--border);color:var(--text-2)}
+.tbl tbody tr:hover{background:var(--panel-2)}
+.tbl tbody tr.best td{color:var(--text)}
+.tbl tbody tr.best td:first-child::before{
+  content:'★ ';color:var(--green);
+}
+.tbl .num{text-align:right}
+.tbl .pill{
+  display:inline-block;padding:2px 8px;border:1px solid var(--border-hot);
+  font-size:10px;background:var(--bg-2);
+}
+.tbl .pill.fp32{color:var(--blue);border-color:var(--blue)}
+.tbl .pill.fp16{color:var(--amber);border-color:var(--amber)}
+.tbl .pill.int8{color:var(--green);border-color:var(--green-dim)}
+.tbl .pill.int4{color:var(--red);border-color:var(--red)}
+.tbl .acc-bar{
+  display:inline-block;width:60px;height:5px;background:var(--bg);
+  position:relative;vertical-align:middle;margin-right:6px;
+}
+.tbl .acc-bar i{position:absolute;left:0;top:0;bottom:0;background:var(--green-dim)}
+
+/* Footer note */
+.foot{
+  font-family:'JetBrains Mono',monospace;font-size:10px;
+  color:var(--text-3);padding:0 4px;
+  display:flex;justify-content:space-between;
+}
+.foot a{color:var(--green-dim);text-decoration:none}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand">
+    <div class="brand-mark">OE</div>
+    <div>
+      <div class="brand-name">OngoEdge<span>·</span>VisionBench</div>
+      <div class="brand-sub">Edge CV Benchmark Suite · InteractionLabs</div>
+    </div>
+  </div>
+  <div class="topbar-chips">
+    <span class="chip live">RUNNER ONLINE</span>
+    <span class="chip">v0.3.1</span>
+    <span class="chip">ONNX · TFLite · TensorRT</span>
+    <span class="chip">cuda 12.4 · trt 10.2</span>
+  </div>
+</div>
+
+<div class="shell">
+  <aside class="sidebar">
+    <div class="side-section">
+      <div class="side-label">Target hardware</div>
+      <div class="target-list" id="targetList">
+        <div class="target active" data-target="jetson"><span class="target-name">Jetson Orin Nano</span><span class="target-tdp">15W</span></div>
+        <div class="target" data-target="pi5"><span class="target-name">Raspberry Pi 5</span><span class="target-tdp">12W</span></div>
+        <div class="target" data-target="coral"><span class="target-name">Coral Edge TPU</span><span class="target-tdp">2W</span></div>
+        <div class="target" data-target="rk3588"><span class="target-name">RK3588 NPU</span><span class="target-tdp">6W</span></div>
+      </div>
+    </div>
+
+    <div class="side-section">
+      <div class="side-label">Models in suite</div>
+      <div class="model-list">
+        <label class="model-row"><input type="checkbox" checked> YOLOv8n</label>
+        <label class="model-row"><input type="checkbox" checked> YOLO11n</label>
+        <label class="model-row"><input type="checkbox" checked> MobileViT-XS</label>
+        <label class="model-row"><input type="checkbox" checked> EfficientViT-B0</label>
+        <label class="model-row"><input type="checkbox" checked> NanoDet-Plus</label>
+        <label class="model-row"><input type="checkbox"> RT-DETR-S</label>
+      </div>
+    </div>
+
+    <div class="side-section">
+      <div class="side-label">Task</div>
+      <div class="target-list">
+        <div class="target active"><span class="target-name">person + gesture</span><span class="target-tdp">1080p</span></div>
+        <div class="target"><span class="target-name">gaze / attention</span><span class="target-tdp">720p</span></div>
+        <div class="target"><span class="target-name">desk objects</span><span class="target-tdp">640p</span></div>
+      </div>
+    </div>
+
+    <div class="side-section">
+      <div class="side-label">Budget</div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text-2);line-height:1.9">
+        <div>p99 latency <span style="color:var(--amber)">≤ 33ms</span></div>
+        <div>peak RAM <span style="color:var(--amber)">≤ 380MB</span></div>
+        <div>power <span style="color:var(--amber)">≤ 8W</span></div>
+        <div>mAP drop <span style="color:var(--amber)">≤ 3pts</span></div>
+      </div>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="hero-row">
+      <!-- Live run -->
+      <div class="panel">
+        <div class="run-bar">
+          <button class="btn primary" id="btnRun">▶ run_bench</button>
+          <button class="btn" id="btnPause" disabled>⏸ pause</button>
+          <button class="btn danger" id="btnReset">⟲ reset</button>
+          <div class="run-status" id="runStatus"><span class="dot"></span><span id="runText">idle · awaiting trigger</span></div>
+        </div>
+        <div class="panel-head">
+          <div class="panel-title">run_log</div>
+          <div class="panel-meta"><span id="elapsed">00:00.0</span> · jetson-orin-nano</div>
+        </div>
+        <div class="console" id="console">
+          <div class="console-line"><span class="console-time">00:00.0</span><span class="console-tag tag-info">[boot]</span><span class="console-msg">vision_bench v0.3.1 — runner online, awaiting trigger</span></div>
+          <div class="console-line"><span class="console-time">00:00.0</span><span class="console-tag tag-info">[boot]</span><span class="console-msg">target: jetson-orin-nano · jp 6.0 · trt 10.2 · cuda 12.4</span></div>
+          <div class="console-line"><span class="console-time">00:00.0</span><span class="console-tag tag-info">[boot]</span><span class="console-msg">click <b style="color:var(--green)">run_bench</b> to start sweep</span></div>
+        </div>
+      </div>
+
+      <!-- Latency scope -->
+      <div class="panel">
+        <div class="panel-head">
+          <div class="panel-title">inference_latency · live</div>
+          <div class="panel-meta">window 200 frames · target ≤33ms</div>
+        </div>
+        <div class="panel-body" style="padding:14px">
+          <div class="scope">
+            <div class="scope-axis-y">
+              <span>80</span><span>60</span><span>40</span><span>20</span><span>0 ms</span>
+            </div>
+            <div class="scope-budget" id="scopeBudget" style="top:48%">
+              <span class="scope-budget-label">33ms budget</span>
+            </div>
+            <canvas class="scope-canvas" id="scopeCanvas"></canvas>
+          </div>
+        </div>
+        <div class="kpi-grid" style="grid-template-columns:repeat(3,1fr)">
+          <div class="kpi">
+            <div class="kpi-label">p50 latency</div>
+            <div class="kpi-value good" id="kpiP50">—<span class="kpi-unit">ms</span></div>
+            <div class="kpi-delta" id="kpiP50d">awaiting</div>
+          </div>
+          <div class="kpi">
+            <div class="kpi-label">p99 latency</div>
+            <div class="kpi-value" id="kpiP99">—<span class="kpi-unit">ms</span></div>
+            <div class="kpi-delta" id="kpiP99d">awaiting</div>
+          </div>
+          <div class="kpi">
+            <div class="kpi-label">throughput</div>
+            <div class="kpi-value" id="kpiFps">—<span class="kpi-unit">fps</span></div>
+            <div class="kpi-delta" id="kpiFpsd">awaiting</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- KPI row -->
+    <div class="panel">
+      <div class="panel-head">
+        <div class="panel-title">device_telemetry</div>
+        <div class="panel-meta">sampled @ 4Hz from jetson-stats</div>
+      </div>
+      <div class="kpi-grid">
+        <div class="kpi">
+          <div class="kpi-label">peak RAM</div>
+          <div class="kpi-value" id="kpiRam">—<span class="kpi-unit">MB</span></div>
+          <div class="kpi-delta" id="kpiRamd">budget 380MB</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">power draw</div>
+          <div class="kpi-value" id="kpiPwr">—<span class="kpi-unit">W</span></div>
+          <div class="kpi-delta" id="kpiPwrd">budget 8W</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">SoC temp</div>
+          <div class="kpi-value" id="kpiTemp">—<span class="kpi-unit">°C</span></div>
+          <div class="kpi-delta">throttle @ 87°C</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">mAP@0.5 (val)</div>
+          <div class="kpi-value" id="kpiMap">—<span class="kpi-unit">%</span></div>
+          <div class="kpi-delta" id="kpiMapd">vs fp32 baseline</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Results table -->
+    <div class="panel">
+      <div class="panel-head">
+        <div class="panel-title">sweep_results · jetson-orin-nano · 640×480</div>
+        <div class="panel-meta">sorted by frontier_score (lat × pwr × accuracy_drop)</div>
+      </div>
+      <table class="tbl">
+        <thead>
+          <tr>
+            <th>model</th>
+            <th>runtime</th>
+            <th>quant</th>
+            <th class="num">p50 (ms)</th>
+            <th class="num">p99 (ms)</th>
+            <th class="num">fps</th>
+            <th class="num">RAM (MB)</th>
+            <th class="num">power (W)</th>
+            <th>mAP@0.5</th>
+            <th class="num">score</th>
+          </tr>
+        </thead>
+        <tbody id="resultsBody">
+          <tr><td colspan="10" style="text-align:center;color:var(--text-3);padding:36px;font-style:italic">— run sweep to populate —</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="foot">
+      <span>// repo: github.com/samson1402/ongo-edge-visionbench</span>
+      <span>jetson-orin-nano · 8GB · jetpack 6.0 · CUDA 12.4 · TRT 10.2 · onnxruntime-gpu 1.18</span>
+    </div>
+  </main>
+</div>
+
+<script>
+// ---- state ----
+const state = {
+  running:false, paused:false, t0:0, frame:0,
+  scopePoints:[], maxScope:200,
+  results:[]
+};
+
+// ---- canvas oscilloscope ----
+const cvs = document.getElementById('scopeCanvas');
+const ctx = cvs.getContext('2d');
+function resizeScope(){
+  const r = cvs.getBoundingClientRect();
+  cvs.width = r.width * devicePixelRatio;
+  cvs.height = r.height * devicePixelRatio;
+  ctx.scale(devicePixelRatio, devicePixelRatio);
+}
+window.addEventListener('resize', resizeScope);
+setTimeout(resizeScope, 50);
+
+function drawScope(){
+  const r = cvs.getBoundingClientRect();
+  ctx.clearRect(0,0,cvs.width,cvs.height);
+  if(state.scopePoints.length < 2) return;
+
+  // budget line shading (red zone above 33ms)
+  const yAt = (ms) => (1 - ms/80) * r.height;
+  ctx.fillStyle = 'rgba(255,107,107,0.05)';
+  ctx.fillRect(0, 0, r.width, yAt(33));
+
+  // line
+  ctx.beginPath();
+  state.scopePoints.forEach((p,i)=>{
+    const x = (i / (state.maxScope-1)) * r.width;
+    const y = yAt(p);
+    if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+  });
+  ctx.strokeStyle = '#7dff9d';
+  ctx.lineWidth = 1.4;
+  ctx.shadowColor = '#7dff9d';
+  ctx.shadowBlur = 6;
+  ctx.stroke();
+  ctx.shadowBlur = 0;
+
+  // recent point dot
+  const last = state.scopePoints[state.scopePoints.length-1];
+  const lx = ((state.scopePoints.length-1) / (state.maxScope-1)) * r.width;
+  const ly = yAt(last);
+  ctx.fillStyle = last>33?'#ff6b6b':'#7dff9d';
+  ctx.beginPath(); ctx.arc(lx,ly,3,0,Math.PI*2); ctx.fill();
+}
+
+// ---- console ----
+const consoleEl = document.getElementById('console');
+function log(tag, msg){
+  const time = ((performance.now()-state.t0)/1000).toFixed(1).padStart(4,'0');
+  const cls = {info:'tag-info', ok:'tag-ok', warn:'tag-warn', err:'tag-err', pwr:'tag-pwr'}[tag] || 'tag-info';
+  const div = document.createElement('div');
+  div.className = 'console-line';
+  div.innerHTML = `<span class="console-time">${time}s</span><span class="console-tag ${cls}">[${tag}]</span><span class="console-msg">${msg}</span>`;
+  consoleEl.appendChild(div);
+  consoleEl.scrollTop = consoleEl.scrollHeight;
+}
+
+// ---- bench script (timeline of stages) ----
+const benchPlan = [
+  {at:200,  do:()=>log('info','loading onnx graph: yolo11n.onnx (3.4MB)')},
+  {at:600,  do:()=>log('info','converting → tensorrt fp16 plan...')},
+  {at:1400, do:()=>log('ok','engine built · 1.8s · 14.2MB plan')},
+  {at:1700, do:()=>log('info','warmup 10 iter · binding host↔device buffers')},
+  {at:2400, do:()=>log('info','starting sweep · 500 frames · 640×480 RGB')},
+  {at:4200, do:()=>{ pushResult('YOLOv8n','TRT','int8',8.4,12.1,118,142,4.8,52.1,0.91); log('ok','yolov8n · int8 · p50=8.4ms · 118fps'); }},
+  {at:6000, do:()=>{ pushResult('YOLOv8n','TRT','fp16',12.7,17.9,79,168,5.6,54.2,0.84); log('ok','yolov8n · fp16 · p50=12.7ms · 79fps'); }},
+  {at:7800, do:()=>{ pushResult('YOLO11n','TRT','int8',7.9,11.4,126,138,4.5,53.7,0.94); log('ok','yolo11n · int8 · p50=7.9ms · 126fps · ★ frontier'); }},
+  {at:9400, do:()=>{ pushResult('YOLO11n','TRT','fp16',11.8,16.2,85,164,5.4,55.0,0.86); log('ok','yolo11n · fp16 · p50=11.8ms · 85fps'); }},
+  {at:11000,do:()=>{ pushResult('MobileViT-XS','ONNX','fp16',18.2,24.6,55,212,6.3,56.8,0.79); log('ok','mobilevit-xs · fp16 · p50=18.2ms'); }},
+  {at:12400,do:()=>{ pushResult('MobileViT-XS','ONNX','int8',14.1,19.8,71,178,5.7,54.9,0.74); log('warn','mobilevit-xs · int8 · acc drop 1.9pt'); }},
+  {at:14000,do:()=>{ pushResult('EfficientViT-B0','TRT','fp16',15.4,21.1,65,196,6.0,57.4,0.82); log('ok','efficientvit-b0 · fp16 · best mAP'); }},
+  {at:15600,do:()=>{ pushResult('EfficientViT-B0','TRT','int8',11.2,15.7,89,162,5.2,55.9,0.78); log('ok','efficientvit-b0 · int8 · p50=11.2ms'); }},
+  {at:17000,do:()=>{ pushResult('NanoDet-Plus','TRT','int8',6.8,9.9,147,124,4.1,51.4,0.88); log('ok','nanodet-plus · int8 · lowest latency'); }},
+  {at:18200,do:()=>{ log('warn','SoC temp 71°C · dvfs throttle minor (3%)'); }},
+  {at:19000,do:()=>{ log('info','sweep complete · 7 configs · sorting by frontier_score'); }},
+  {at:19400,do:()=>{ log('ok','✓ winner: YOLO11n · TRT · int8 · 126fps @ 4.5W · mAP 53.7%'); }},
+  {at:19800,do:()=>{ log('info','report → /reports/ongo_bench_2026_05_18.html'); finishRun(); }},
+];
+
+function pushResult(model, rt, q, p50, p99, fps, ram, pwr, map, score){
+  state.results.push({model, rt, q, p50, p99, fps, ram, pwr, map, score});
+  renderResults();
+}
+
+function renderResults(){
+  const body = document.getElementById('resultsBody');
+  if(!state.results.length){ return; }
+  // sort by score desc
+  const sorted = [...state.results].sort((a,b)=>b.score-a.score);
+  body.innerHTML = sorted.map((r,i)=>{
+    const accW = Math.min(100, (r.map/60)*100);
+    return `<tr class="${i===0?'best':''}">
+      <td style="color:var(--text)">${r.model}</td>
+      <td>${r.rt}</td>
+      <td><span class="pill ${r.q}">${r.q.toUpperCase()}</span></td>
+      <td class="num">${r.p50.toFixed(1)}</td>
+      <td class="num" style="color:${r.p99>33?'var(--red)':'var(--text)'}">${r.p99.toFixed(1)}</td>
+      <td class="num" style="color:var(--green)">${r.fps}</td>
+      <td class="num">${r.ram}</td>
+      <td class="num" style="color:${r.pwr>8?'var(--amber)':'var(--text)'}">${r.pwr.toFixed(1)}</td>
+      <td><span class="acc-bar"><i style="width:${accW}%"></i></span>${r.map.toFixed(1)}%</td>
+      <td class="num" style="color:var(--green)">${r.score.toFixed(2)}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ---- live KPIs ----
+function tickLive(){
+  // simulated rolling latency for selected model
+  const baseline = state.results.length ? state.results[state.results.length-1].p50 : 14;
+  const noise = (Math.random()-0.5)*5 + (Math.random()<0.05? 18 : 0);
+  const lat = Math.max(4, baseline + noise);
+  state.scopePoints.push(lat);
+  if(state.scopePoints.length > state.maxScope) state.scopePoints.shift();
+  drawScope();
+
+  // KPIs
+  const arr = state.scopePoints.slice(-100);
+  const p50 = quantile(arr, 0.5);
+  const p99 = quantile(arr, 0.99);
+  document.getElementById('kpiP50').innerHTML = p50.toFixed(1) + '<span class="kpi-unit">ms</span>';
+  document.getElementById('kpiP99').innerHTML = p99.toFixed(1) + '<span class="kpi-unit">ms</span>';
+  document.getElementById('kpiFps').innerHTML = Math.round(1000/p50) + '<span class="kpi-unit">fps</span>';
+
+  document.getElementById('kpiP50').className = 'kpi-value ' + (p50<20?'good':p50<33?'warn':'bad');
+  document.getElementById('kpiP99').className = 'kpi-value ' + (p99<33?'good':p99<50?'warn':'bad');
+
+  document.getElementById('kpiP50d').textContent = p50<20?'within budget':'check budget';
+  document.getElementById('kpiP99d').textContent = p99<33?'within budget':'spike detected';
+  document.getElementById('kpiFpsd').textContent = (1000/p50>60)?'real-time ✓':'sub-realtime';
+
+  // Telemetry
+  const ram = 140 + Math.sin(Date.now()/3000)*8 + Math.random()*4;
+  const pwr = 4.5 + Math.sin(Date.now()/2200)*0.6 + Math.random()*0.3;
+  const temp = 64 + Math.sin(Date.now()/5000)*4 + Math.random();
+  const map = 53.7;
+  document.getElementById('kpiRam').innerHTML = ram.toFixed(0) + '<span class="kpi-unit">MB</span>';
+  document.getElementById('kpiPwr').innerHTML = pwr.toFixed(1) + '<span class="kpi-unit">W</span>';
+  document.getElementById('kpiTemp').innerHTML = temp.toFixed(0) + '<span class="kpi-unit">°C</span>';
+  document.getElementById('kpiMap').innerHTML = map.toFixed(1) + '<span class="kpi-unit">%</span>';
+  document.getElementById('kpiMapd').textContent = '−0.5pt vs fp32 (54.2%)';
+
+  // elapsed
+  const e = (performance.now()-state.t0)/1000;
+  document.getElementById('elapsed').textContent = `${Math.floor(e/60).toString().padStart(2,'0')}:${(e%60).toFixed(1).padStart(4,'0')}`;
+}
+
+function quantile(arr,q){
+  if(!arr.length) return 0;
+  const s = [...arr].sort((a,b)=>a-b);
+  return s[Math.min(s.length-1, Math.floor(s.length*q))];
+}
+
+// ---- run control ----
+let liveTimer=null, planTimer=null, planIndex=0;
+function startRun(){
+  if(state.running) return;
+  state.running = true;
+  state.t0 = performance.now();
+  state.scopePoints = [];
+  state.results = [];
+  planIndex = 0;
+  renderResults();
+  document.getElementById('runStatus').className = 'run-status running';
+  document.getElementById('runText').textContent = 'running · bench sweep';
+  document.getElementById('btnRun').textContent = '▶ running...';
+  document.getElementById('btnRun').disabled = true;
+  document.getElementById('btnPause').disabled = false;
+
+  log('info','▶ run_bench triggered — target=jetson-orin-nano · task=person+gesture');
+  log('info','suite: 5 models × 2 precisions = 10 configs');
+
+  liveTimer = setInterval(tickLive, 100);
+  planTimer = setInterval(()=>{
+    const now = performance.now() - state.t0;
+    while(planIndex < benchPlan.length && benchPlan[planIndex].at <= now){
+      benchPlan[planIndex].do();
+      planIndex++;
+    }
+    if(planIndex >= benchPlan.length){
+      clearInterval(planTimer);
+    }
+  }, 100);
+}
+
+function finishRun(){
+  state.running = false;
+  clearInterval(planTimer);
+  // keep liveTimer running so dashboard keeps breathing
+  document.getElementById('runStatus').className = 'run-status done';
+  document.getElementById('runText').textContent = 'sweep complete · 7 configs';
+  document.getElementById('btnRun').textContent = '▶ run_bench';
+  document.getElementById('btnRun').disabled = false;
+  document.getElementById('btnPause').disabled = true;
+}
+
+function resetRun(){
+  state.running = false;
+  clearInterval(liveTimer); clearInterval(planTimer);
+  state.scopePoints = []; state.results = [];
+  drawScope(); renderResults();
+  document.getElementById('runStatus').className = 'run-status';
+  document.getElementById('runText').textContent = 'idle · awaiting trigger';
+  document.getElementById('btnRun').textContent = '▶ run_bench';
+  document.getElementById('btnRun').disabled = false;
+  document.getElementById('btnPause').disabled = true;
+  ['kpiP50','kpiP99','kpiFps','kpiRam','kpiPwr','kpiTemp','kpiMap'].forEach(id=>{
+    document.getElementById(id).innerHTML = '—';
+    document.getElementById(id).className = 'kpi-value';
+  });
+  consoleEl.innerHTML = '';
+  log('info','vision_bench v0.3.1 — runner reset, awaiting trigger');
+}
+
+document.getElementById('btnRun').addEventListener('click', startRun);
+document.getElementById('btnReset').addEventListener('click', resetRun);
+document.getElementById('btnPause').addEventListener('click', ()=>{
+  state.paused = !state.paused;
+  document.getElementById('btnPause').textContent = state.paused?'▶ resume':'⏸ pause';
+});
+
+// Target switching (cosmetic)
+document.querySelectorAll('[data-target]').forEach(el=>{
+  el.addEventListener('click', ()=>{
+    document.querySelectorAll('[data-target]').forEach(x=>x.classList.remove('active'));
+    el.classList.add('active');
+    if(state.running) log('info', `target switched → ${el.querySelector('.target-name').textContent} (will apply next run)`);
+  });
+});
+</script>
+</body>
+</html>

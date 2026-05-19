@@ -1,0 +1,35 @@
+# Example sweep config — fed by scripts/run_sweep.py
+#
+# Two boundaries this config respects:
+#   p99 latency ≤ 33 ms  (30 FPS budget, Ongo's perception loop)
+#   mean power ≤ 8 W     (Orin Nano TDP minus headroom for actuators)
+
+target: jetson-orin-nano
+
+models:
+  - yolo11n
+  - yolov8n
+  - nanodet-plus
+  - mobilevit-xs
+  - efficientvit-b0
+
+precisions:
+  - fp16
+  - int8
+
+input:
+  height: 480
+  width: 640
+
+frames: 500
+warmup: 25
+
+budgets:
+  p99_latency_ms: 33.0
+  mean_power_w: 8.0
+  peak_ram_mb: 380.0
+  max_map_drop_pts: 3.0
+
+report:
+  format: [json, html]
+  out_dir: reports/
