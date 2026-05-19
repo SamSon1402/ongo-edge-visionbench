@@ -3,6 +3,11 @@
 > Edge CV benchmark suite for the Ongo companion robot.
 > Built for InteractionLabs by Sameer M. — Paris, May 2026.
 
+<img width="1107" height="547" alt="image" src="https://github.com/user-attachments/assets/3713a8da-8fdc-40ff-84c2-986fbce993bb" />
+<img width="1223" height="872" alt="image" src="https://github.com/user-attachments/assets/7abfdd5d-631e-444a-9f70-b38e48de5e5f" />
+<img width="1831" height="537" alt="image" src="https://github.com/user-attachments/assets/a77dc373-fe7e-4dc8-9064-144eb3746c54" />
+
+
 A reproducible benchmark harness that sweeps small CV models across edge
 runtimes (ONNX Runtime / TFLite / TensorRT) and edge targets (Jetson Orin,
 Raspberry Pi 5, Coral, RK3588) and produces a Pareto-front report:
